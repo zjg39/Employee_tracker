@@ -19,11 +19,11 @@ CREATE TABLE positions (
 );
 
 CREATE TABLE employees (
-    id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
+    id INT NOT NULL UNIQUE AUTO_INCREMENT PRIMARY KEY,
     first_name VARCHAR(50) NOT NULL,
     last_name VARCHAR(50) NOT NULL,
+    positions_id INT,
     manager_id INT,
-    position_id INT,
-    FOREIGN KEY (position_id) REFERENCES positions(id)
+    FOREIGN KEY (positions_id) REFERENCES positions(id)
     ON DELETE SET NULL
 );
