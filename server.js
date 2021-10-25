@@ -34,8 +34,9 @@ const questionList = () => {
 // Depending on the user's choice, a different function will execute.  A switch/case seemed like the
 // effective way to deal with this.
 .then ((answer) =>{
-    switch(answer.option) {
+    switch(answer.database_options) {
         case 'View Departments':
+            console.log('is it working?')
             viewDepartments();
             break;
         case 'View Positions':
@@ -60,7 +61,7 @@ const questionList = () => {
     })
 };
 const viewDepartments = () => {
-    db.query(`SELECT id, department.name AS Name FROM department`, (err, department) => {
+    connect.query(`SELECT id, department.name AS Name FROM department`, (err, department) => {
         if (err){
             console.error(err);
         } else {
@@ -73,7 +74,7 @@ const viewDepartments = () => {
     })
 }
 const viewPositions = () => {
-    db.query(`SELECT positions.id
+    connect.query(`SELECT positions.id
               positions.title AS title,
               positions.salary AS salary,
               positions.department_id AS department,
@@ -93,7 +94,7 @@ const viewPositions = () => {
 }
 // View the employees and their information
 const viewEmployees = () => {
-    db.query(`
+    connect.query(`
     SELECT employees.id,
            employees.first_name AS firstName,
            employees.last_name AS lastName,
@@ -117,12 +118,12 @@ const viewEmployees = () => {
     })
 }
 // Add another department to the database
-const createDepartment = () => {
+const addDepartment = () => {
     console.log(`
     -- Add Department --
     `);
 
-    db.query(`SELECT * FROM department`, (err, res) => {
+    connect.query(`SELECT * FROM department`, (err, res) => {
         if (err) {
             console.error(err);
         } else {
@@ -138,7 +139,7 @@ const createDepartment = () => {
     })
     // a promise to check for an error if one pops up
     .then((answer) => {
-        db.query(`INSERT INTO department (name)VALUES (?)`, [answer.department]), (err) => {
+        connect.query(`INSERT INTO department (name)VALUES (?)`, [answer.department]), (err) => {
             if (err) {
                 console.error(err);
             } else {
@@ -156,7 +157,7 @@ const addPosition = () => {
     -- Add Position --
     `);
 
-    db.query(`SELECT * FROM department`, (err, res) => {
+    connect.query(`SELECT * FROM department`, (err, res) => {
         if (err) {
             console.error(err);
         } else {
@@ -195,7 +196,7 @@ const addPosition = () => {
             ])
             .then((answer) => {
                 const departmentAnswer = answer.department;
-                db.query(`
+                connect.query(`
                 INSERT INTO positions (title, salary, department_id)
                 VALUES (?,?,?)`, [answer.addPosition, answer.salaryAmount, departmentAnswer],
                 function(err) {
@@ -212,12 +213,26 @@ const addPosition = () => {
         }
     })
 }
+// An array to choose positions from for new employees.. this will come in handy in just a sec
+const choosePosition = () => {
+    positionList = [];
+    connect.query(`SELECT * FROM positions`, (err, positions) =>{
+        if(err){
+            console.error(err);
+        } else {
+            for(x=0; x<positions.length; x++){
+                positionList.push(positions.title);  // I kept having some trouble right here, I am 
+            }                                        // pretty sure that my syntax is off, somewhere...
+        }
+    });
+    return positionList;
+}
 // Add another employee to the database
 const addEmployee = () => {
     console.log(`
     -- Add Employee --
     `);
-    db.query(`SELECT * FROM employees`, (err, res) =>{
+    connect.query(`SELECT * FROM employees`, (err, res) =>{
         if (err) {
             console.error(err);
         } else {
@@ -245,25 +260,34 @@ const addEmployee = () => {
                             return true;
                         }
                     }
+                },
+                {
+                    type: 'input',
+                    name: 'currentPosition',
+                    message: 'What position does this employee have?',
+                    choices: choosePosition()
                 }
             ])
+            .then((answer) =>{
+                connect.query(`
+                INSERT INTO employees (first_name, last_name, positions_id, manager_id)
+                VALUES (?,?,?,?)`, [answer.firstName, answer.lastName],
+                function(err){
+                    if(err){
+                        console.error(err);
+                    } else {
+                        console.log(`
+                        -- ${answer.firstName} ${answer.lastName} has been added to the database ! --
+                        `);
+                        viewEmployees();
+                    }
+                })
+            })
         }
     })
+    questionList();
 }
-// An array to choose positions from for new employees
-const choosePosition = () => {
-    positionList = [];
-    db.query(`SELECT * FROM positions`, (err, positions) =>{
-        if(err){
-            console.error(err);
-        } else {
-            for(x=0; x<positions.length; x++){
-                positionList.push(positions.title);  // I kept having some trouble right here, I am 
-            }                                        // pretty sure that my syntax is off, somewhere...
-        }
-    });
-    return positionList;
-}
+
 // End the program altogether, with a goodbye message
 const quitProgram = () => {
     console.log(`
