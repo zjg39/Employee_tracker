@@ -14,14 +14,6 @@ const init = () => {
     `)
     questionList();
 }
-
-// End the process
-const quitProgram = () => {
-    console.log(`
-    -- Thank you for using our Employee Database! --
-    `);
-    process.exit(0);
-}
 const questionList = () => {
     inquirer.prompt([
         {
@@ -158,8 +150,8 @@ const createDepartment = () => {
         }
     })
 }
-// Ad another position to the database
-const creatPosition = () => {
+// Add another position to the database
+const addPosition = () => {
     console.log(`
     -- Add Position --
     `);
@@ -193,12 +185,39 @@ const creatPosition = () => {
                             return true;
                         }
                     }
+                },
+                {
+                    type: 'list',
+                    name: 'departmentSort',
+                    message: 'Which department will this new position be in?',
+                    choices: departmentChoices
                 }
             ])
+            .then((answer) => {
+                const departmentAnswer = answer.department;
+                db.query(`
+                INSERT INTO positions (title, salary, department_id)
+                VALUES (?,?,?)`, [answer.addPosition, answer.salaryAmount, departmentAnswer],
+                function(err) {
+                    if (err) {
+                        console.error(err);
+                    } else {
+                        console.log(`
+                        -- ${answer.addPosition} has been added as a new position in the employee database! --
+                        `);
+                        questionList();
+                    }
+                })
+            })
         }
     })
 }
 
-
-
+// End the process
+const quitProgram = () => {
+    console.log(`
+    -- Thank you for using our Employee Database! --
+    `);
+    process.exit(0);
+}
 init();
