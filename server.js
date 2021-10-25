@@ -212,8 +212,59 @@ const addPosition = () => {
         }
     })
 }
-
-// End the process
+// Add another employee to the database
+const addEmployee = () => {
+    console.log(`
+    -- Add Employee --
+    `);
+    db.query(`SELECT * FROM employees`, (err, res) =>{
+        if (err) {
+            console.error(err);
+        } else {
+            inquirer.prompt([
+                {
+                    type: 'input',
+                    name: 'firstName',
+                    message: 'What is the employee\'s first name?',
+                    validate: function(isString) {
+                        if(isString === ''){
+                            return 'Please enter a valid name';
+                        } else {
+                            return true;
+                        }
+                    }
+                },
+                {
+                    type: 'input',
+                    name: 'lastName',
+                    message: 'What is the employee\'s last name?',
+                    validate: function(isString) {
+                        if(isString === ''){
+                            return 'Please enter a valid name';
+                        } else {
+                            return true;
+                        }
+                    }
+                }
+            ])
+        }
+    })
+}
+// An array to choose positions from for new employees
+const choosePosition = () => {
+    positionList = [];
+    db.query(`SELECT * FROM positions`, (err, positions) =>{
+        if(err){
+            console.error(err);
+        } else {
+            for(x=0; x<positions.length; x++){
+                positionList.push(positions.title);  // I kept having some trouble right here, I am 
+            }                                        // pretty sure that my syntax is off, somewhere...
+        }
+    });
+    return positionList;
+}
+// End the program altogether, with a goodbye message
 const quitProgram = () => {
     console.log(`
     -- Thank you for using our Employee Database! --
