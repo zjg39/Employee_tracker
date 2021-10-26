@@ -2,7 +2,7 @@ const mysql = require('mysql');
 const inquirer = require('inquirer');
 const connect = mysql.createConnection({
     host: 'localhost',
-    db: 'employee_tracker_db',
+    database: 'employee_tracker_db',
     user: 'root',
     password: 'RootBee39!'
 })
@@ -61,7 +61,7 @@ const questionList = () => {
     })
 };
 const viewDepartments = () => {
-    connect.query(`SELECT id, department.name AS Name FROM department`, (err, department) => {
+    connect.query(`SELECT * FROM department`, (err, department) => {
         if (err){
             console.error(err);
         } else {
@@ -74,38 +74,23 @@ const viewDepartments = () => {
     })
 }
 const viewPositions = () => {
-    connect.query(`SELECT positions.id
-              positions.title AS title,
-              positions.salary AS salary,
-              positions.department_id AS department,
-              FROM positions
-              LEFT JOIN department ON positions.department_id = department.id
-              `, (err, res) => {
+    connect.query(`SELECT * FROM positions`,
+                (err, res) => {
                   if (err) {
                       console.error(err);
                   } else {
                       console.log(`
                       -- Positions --
                       `); 
-                      console.log(res);
+                      console.table(res);
                       questionList();
         }
     })
 }
 // View the employees and their information
 const viewEmployees = () => {
-    connect.query(`
-    SELECT employees.id,
-           employees.first_name AS firstName,
-           employees.last_name AS lastName,
-           employees.positions_id AS title,
-           positions.salary AS salary,
-           department.name AS department,
-           FROM employees
-           LEFT JOIN department ON positions.department_id = department.id,
-           LEFT JOIN manager ON manager.id = employees.manager_id,
-           ORDER BY employees.id
-           `, (err, res) => {
+    connect.query(`SELECT * FROM employees`,
+              (err, res) => {
                if (err) {
                    console.error(err);
                } else {
@@ -135,21 +120,23 @@ const addDepartment = () => {
                     message: 'What is your new department\'s name?'
                 }
             ])
+            .then((answer) => {
+                console.log(answer);
+                const composer = 'composer';
+                connect.query(`INSERT INTO department (name) VALUES ${answer.departmentName}`, (err) => {
+                    if (err) {
+                        console.error(err);
+                    } else {
+                        console.log(`
+                        -- ${answer.departmentName} successfully added to the database --
+                        `);
+                        questionList();
+                    }
+                })
+            })
         }
     })
     // a promise to check for an error if one pops up
-    .then((answer) => {
-        connect.query(`INSERT INTO department (name)VALUES (?)`, [answer.department]), (err) => {
-            if (err) {
-                console.error(err);
-            } else {
-                console.log(`
-                -- ${answer.department} successfully added to the database --
-                `);
-                questionList();
-            }
-        }
-    })
 }
 // Add another position to the database
 const addPosition = () => {
@@ -161,7 +148,7 @@ const addPosition = () => {
         if (err) {
             console.error(err);
         } else {
-            const departmentChoices = department.map(({ name, id }) => ({name: name, value: id}));
+            const departmentChoices = res.map(({ name, id }) => ({name: name, value: id}));
             inquirer.prompt([
                 {
                     type: 'input',
@@ -180,11 +167,7 @@ const addPosition = () => {
                     name: 'salaryAmount',
                     message: 'What is the new position\'s salary?',
                     validate: function(isNumber) {
-                        if(isNAN(isNumber) || Number === ''){
-                            return 'Please enter a valid response';
-                        } else {
-                            return true;
-                        }
+                        return /^[0-9][A-Za-z0-9 -]*$/.test(isNumber)
                     }
                 },
                 {
